@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "fixtures": [
+    {
+      "id": "synthetic-chord-check",
+      "title": "Synthetic chord alignment smoke fixture",
+      "generator": "python fixtures/generate_synthetic_fixture.py",
+      "source_path": "fixtures/synthetic-chord-check.txt",
+      "source_kind": "chords",
+      "rights": "Generated tones and text owned by this repository",
+      "seeded_findings": [
+        {
+          "type": "wrong_pitch",
+          "measure_number": 1,
+          "description": "The integration test substitutes one detected pitch to exercise reviewer evidence."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+.git
+.pytest_cache
+data
+**/__pycache__
+**/*.pyc
+web/node_modules
+web/.next
+web/npm-debug.log*
