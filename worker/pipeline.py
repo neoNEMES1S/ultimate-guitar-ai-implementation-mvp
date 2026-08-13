@@ -165,6 +165,7 @@ def score_events(expected: list[dict], detected: list[dict], bars: list[tuple[fl
             "expected_events": [expected[index] for index in expected_indices],
             "detected_events": [detected[index] for index in detected_indices],
         })
+    _ensure_unique_finding_ids(findings)
     return {"measures": measures, "findings": findings}
 
 
@@ -257,6 +258,7 @@ def score(expected: list[dict], detected: list[dict], bars: list[tuple[float, fl
             "expected_notes": expected_here,
             "detected_notes": detected_here,
         })
+    _ensure_unique_finding_ids(findings)
     return {"measures": measures, "findings": findings}
 
 
@@ -275,6 +277,17 @@ def _finding(number: int, kind: str, confidence: float, expected: dict | None, d
         "audio_start_seconds": round(max(0.0, target_onset - 1.5), 3),
         "audio_end_seconds": round(target_onset + 1.5, 3),
     }
+
+
+def _ensure_unique_finding_ids(findings: list[dict]) -> None:
+    """Disambiguate rounded IDs when several findings share a timestamp/pitch."""
+    occurrences: dict[str, int] = {}
+    for finding in findings:
+        base_id = str(finding.get("id") or "finding")
+        occurrence = occurrences.get(base_id, 0) + 1
+        occurrences[base_id] = occurrence
+        if occurrence > 1:
+            finding["id"] = f"{base_id}-{occurrence}"
 
 
 def _bars_for_duration(duration: float) -> list[tuple[float, float]]:

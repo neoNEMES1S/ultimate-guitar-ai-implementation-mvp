@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://localhost:6379/1"
     celery_task_always_eager: bool = False
     max_audio_bytes: int = 100 * 1024 * 1024
+    max_pdf_bytes: int = 25 * 1024 * 1024
+    max_pdf_pages: int = 20
 
     @property
     def database_path(self) -> Path:

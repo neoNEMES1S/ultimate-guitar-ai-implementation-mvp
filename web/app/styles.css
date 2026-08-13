@@ -24,7 +24,7 @@ button { cursor: pointer; color: #10131a; background: #a5ec73; border: 0; border
 .drive-box { display: grid; gap: 8px; color: #b9c0cb; font-size: .82rem; }
 .drive-box button { justify-self: start; }
 .hint, .examples, .proposal small { color: #9ea8b7; font-size: .82rem; }
-.ocr-import { display: grid; gap: 6px; margin-top: 14px; padding: 12px; border: 1px dashed #3a4351; border-radius: 8px; }
+.ocr-import { display: grid; gap: 10px; margin-top: 14px; padding: 12px; border: 1px dashed #3a4351; border-radius: 8px; }
 .ocr-import span { color: #9ea8b7; font-size: .78rem; }
 .examples { display: flex; gap: 8px; margin-top: 18px; }
 .examples button { background: #d8dce4; font-size: .8rem; }

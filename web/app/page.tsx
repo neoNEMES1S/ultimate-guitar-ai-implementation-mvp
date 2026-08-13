@@ -25,7 +25,7 @@ export default function Home() {
   const [audioSource, setAudioSource] = useState<"upload" | "drive">("upload");
   const [driveFile, setDriveFile] = useState<DriveFile>();
   const [driveToken, setDriveToken] = useState<string>();
-  const [ocrMessage, setOcrMessage] = useState("Screenshot OCR is optional; review its result before analysis.");
+  const [ocrMessage, setOcrMessage] = useState("Screenshot/PDF OCR is optional; review its result before analysis.");
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -118,6 +118,25 @@ export default function Home() {
     setOcrMessage(`OCR confidence ${Math.round((data.confidence ?? 0) * 100)}%. ${data.warnings?.join(" ") ?? "Review the extracted text."}`);
   }
 
+  async function recognizePdf(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const form = new FormData();
+    form.append("pdf", file);
+    setOcrMessage("Reading PDF pages and detecting fret numbers…");
+    const response = await fetch(`${apiUrl}/api/sources/pdf`, { method: "POST", body: form });
+    const data = await response.json() as { text?: string; confidence?: number; suggested_kind?: SourceKind; warnings?: string[]; tuning_hint?: string[]; page_count?: number; systems_detected?: number; detail?: string };
+    if (!response.ok) { setOcrMessage(data.detail ?? "PDF import failed."); return; }
+    const textarea = document.querySelector<HTMLTextAreaElement>("textarea[name=source_text]");
+    const select = document.querySelector<HTMLSelectElement>("select[name=source_kind]");
+    const tuning = document.querySelector<HTMLInputElement>("input[name=tuning]");
+    if (textarea) textarea.value = data.text ?? "";
+    if (select && data.suggested_kind) select.value = data.suggested_kind;
+    if (tuning && data.tuning_hint?.length === 6) tuning.value = data.tuning_hint.join(",");
+    const pageInfo = data.page_count ? `${data.page_count} pages, ${data.systems_detected ?? 0} tab systems` : "PDF";
+    setOcrMessage(`${pageInfo}. OCR confidence ${Math.round((data.confidence ?? 0) * 100)}%. ${data.warnings?.join(" ") ?? "Review the extracted tab."}`);
+  }
+
   async function decide(decision: "approved" | "dismissed" | "ignored") {
     if (!job || !selected) return;
     await fetch(`${apiUrl}/api/jobs/${job.id}/findings/${selected.id}/review`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision }) });
@@ -150,10 +169,10 @@ export default function Home() {
   return <main>
     <header><p className="eyebrow">ULTIMATE GUITAR · MVP</p><h1>Verify and repair a chord sheet or tab.</h1><p className="subtle">Paste the source users already have, add a recording, and review every proposed change.</p></header>
     <section className="upload"><form onSubmit={submit}>
-      <div className="source-editor"><label>Chord sheet or tab <select name="source_kind" defaultValue="chords"><option value="chords">Chords + lyrics</option><option value="tab">Six-string ASCII tab</option></select></label><textarea required name="source_text" defaultValue={exampleChordSheet} rows={9} spellCheck={false} aria-label="Chord sheet or tab text" /><div className="ocr-import"><label>Import screenshot <input type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" onChange={recognizeImage} /></label><span>{ocrMessage}</span></div><p className="hint">Text spacing is retained as a timing clue; the audio supplies the rhythm evidence.</p></div>
+      <div className="source-editor"><label>Chord sheet or tab <select name="source_kind" defaultValue="chords"><option value="chords">Chords + lyrics</option><option value="tab">Six-string ASCII tab</option></select></label><textarea required name="source_text" defaultValue={exampleChordSheet} rows={9} spellCheck={false} aria-label="Chord sheet or tab text" /><div className="ocr-import"><label>Import screenshot <input type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp" onChange={recognizeImage} /></label><label>Import PDF sheet <input type="file" accept="application/pdf,.pdf" onChange={recognizePdf} /></label><span>{ocrMessage}</span></div><p className="hint">PDF and screenshot imports create editable tab text. Review fret numbers and techniques before analysis.</p></div>
       <div className="source-options"><div className="audio-source-toggle"><button type="button" className={audioSource === "upload" ? "active" : "secondary"} onClick={() => setAudioSource("upload")}>Upload audio</button><button type="button" className={audioSource === "drive" ? "active" : "secondary"} onClick={() => setAudioSource("drive")}>Google Drive</button></div>{audioSource === "upload" ? <label>Audio recording <input required name="audio" type="file" accept="audio/wav,audio/mpeg,audio/mp4,audio/flac,video/mp4,.wav,.mp3,.m4a,.flac,.mp4" /></label> : <div className="drive-box"><button type="button" onClick={chooseDriveFile}>Choose Drive file</button><span>{driveFile ? driveFile.name : "No Drive file selected"}</span></div>}<label>BPM hint <input name="bpm" type="number" min="30" max="240" placeholder="Infer" /></label><label>Capo <input name="capo" type="number" min="0" max="24" defaultValue="0" /></label><label>Tuning <input name="tuning" defaultValue="E2,A2,D3,G3,B3,E4" /></label><label>YouTube reference <input name="reference_url" type="url" placeholder="Optional source link" /></label><button type="submit">Start analysis</button></div>
     </form><div className="examples"><button type="button" onClick={() => fillExample("chords")}>Load chord example</button><button type="button" onClick={() => fillExample("tab")}>Load tab example</button></div><p aria-live="polite">{job ? `${job.status.toUpperCase()} — ` : ""}{job?.error ?? message}</p></section>
-    {result && <section className="review"><div><h2>Measure confidence</h2><div className="measures">{result.measures.map(measure => <button className={measure.score > .85 ? "good" : measure.score > .6 ? "caution" : "bad"} key={measure.number} onClick={() => setSelected(result.findings.find(item => item.measure_number === measure.number))} title={`${measure.score * 100}% confidence`}>M{measure.number}<small>{Math.round(measure.score * 100)}%</small></button>)}</div><h2>Findings and proposed repairs</h2><div className="findings">{result.findings.length === 0 ? <p>No mismatches were found at the current thresholds.</p> : result.findings.map(finding => <button key={finding.id} className={selected?.id === finding.id ? "finding selected" : "finding"} onClick={() => setSelected(finding)}><strong>M{finding.measure_number} · {finding.type.replaceAll("_", " ")}</strong><span>{finding.message}</span>{finding.correction && <em>Suggested correction: {finding.correction}</em>}<em>{Math.round(finding.confidence * 100)}% confidence</em></button>)}</div><button className="export" onClick={downloadCorrected}>Download approved corrections</button></div>
+    {result && <section className="review"><div><h2>Measure confidence</h2><div className="measures">{result.measures.map(measure => <button className={measure.score > .85 ? "good" : measure.score > .6 ? "caution" : "bad"} key={measure.number} onClick={() => setSelected(result.findings.find(item => item.measure_number === measure.number))} title={`${measure.score * 100}% confidence`}>M{measure.number}<small>{Math.round(measure.score * 100)}%</small></button>)}</div><h2>Findings and proposed repairs</h2><div className="findings">{result.findings.length === 0 ? <p>No mismatches were found at the current thresholds.</p> : result.findings.map((finding, index) => <button key={`${finding.id}-${index}`} className={selected?.id === finding.id ? "finding selected" : "finding"} onClick={() => setSelected(finding)}><strong>M{finding.measure_number} · {finding.type.replaceAll("_", " ")}</strong><span>{finding.message}</span>{finding.correction && <em>Suggested correction: {finding.correction}</em>}<em>{Math.round(finding.confidence * 100)}% confidence</em></button>)}</div><button className="export" onClick={downloadCorrected}>Download approved corrections</button></div>
       <aside><h2>Reviewer evidence</h2>{selected ? <><p><b>{selected.type.replaceAll("_", " ")}</b><br />{selected.message}</p><dl><dt>Expected</dt><dd>{eventText(selected.expected)}</dd><dt>Detected</dt><dd>{eventText(selected.detected)}</dd><dt>Confidence</dt><dd>{Math.round(selected.confidence * 100)}%</dd><dt>Decision</dt><dd>{selectedDecision ?? "Awaiting review"}</dd></dl><div className="audio-evidence"><button onClick={playEvidence}>Play evidence loop</button><audio ref={audioRef} controls preload="metadata" src={`${apiUrl}/api/jobs/${job?.id}/audio`} /></div>{selected.correction && <div className="proposal"><b>Proposed repair</b><p>{selected.correction}</p><small>Approve the finding, then export the corrected source text.</small></div>}<div className="actions"><button onClick={() => decide("approved")}>Approve</button><button onClick={() => decide("dismissed")}>Dismiss</button><button onClick={() => decide("ignored")}>Ignore</button></div></> : <p>Select a flagged measure or finding to inspect its evidence.</p>}</aside>
     </section>}
   </main>;

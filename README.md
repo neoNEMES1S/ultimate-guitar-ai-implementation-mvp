@@ -23,12 +23,14 @@ For a quick API-only development loop, install `api/requirements.txt`, set
 `CELERY_TASK_ALWAYS_EAGER=true`, and run FastAPI from `api`.
 
 The current text-first form supports chord labels above lyrics and common
-six-string ASCII tab lines. It preserves source tokens and character positions,
-uses the recording duration plus source spacing as an initial timing basis, and
-marks corrections as proposals for review. Beat-grid timing, monotonic
-alignment, audio evidence loops, approved text export, and assisted screenshot
-OCR are included in this slice. OCR output is deliberately editable and must be
-reviewed before analysis; it is not represented as ground truth.
+six-string ASCII tab lines. It also accepts screenshot and PDF sheet imports:
+PDF pages are rendered, six-line staff systems are detected, and OCR'd fret
+numbers are converted into editable ASCII tab. It preserves source tokens and
+character positions, uses the recording duration plus source spacing as an
+initial timing basis, and marks corrections as proposals for review. Beat-grid
+timing, monotonic alignment, audio evidence loops, approved text export, and
+assisted OCR are included in this slice. OCR output is deliberately editable
+and must be reviewed before analysis; it is not represented as ground truth.
 
 The repository does not ship commercial recordings or scraped tabs. Add only
 owned, licensed, or explicitly permissioned demo fixtures under `fixtures/` and

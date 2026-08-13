@@ -1,5 +1,5 @@
 from worker import pipeline
-from worker.pipeline import align_events, score, score_events
+from worker.pipeline import _ensure_unique_finding_ids, _finding, align_events, score, score_events
 
 
 def test_score_flags_wrong_pitch_in_expected_measure() -> None:
@@ -41,6 +41,18 @@ def test_source_score_exposes_audio_loop_bounds() -> None:
     assert finding["type"] == "wrong_pitch"
     assert finding["audio_start_seconds"] == 0.0
     assert finding["audio_end_seconds"] == 2.5
+
+
+def test_finding_ids_are_unique_when_the_base_identity_repeats() -> None:
+    findings = [
+        _finding(1, "timing_deviation", 0.6, {"pitch": 75, "onset_seconds": 0.06}, {"pitch": 75, "onset_seconds": 0.12}, "first"),
+        _finding(1, "timing_deviation", 0.6, {"pitch": 75, "onset_seconds": 0.06}, {"pitch": 75, "onset_seconds": 0.12}, "second"),
+    ]
+
+    _ensure_unique_finding_ids(findings)
+
+    assert len({finding["id"] for finding in findings}) == 2
+    assert findings[1]["id"].endswith("-2")
 
 
 def test_analyze_source_runs_source_schedule_transcription_and_scoring(monkeypatch, tmp_path) -> None:

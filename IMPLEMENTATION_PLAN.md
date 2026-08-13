@@ -227,6 +227,8 @@ users are not forced to author or upload a MIDI file. It also includes:
 - YouTube URL validation as an attribution/reference field only (no arbitrary
   YouTube downloading);
 - assisted screenshot OCR that returns editable chord/tab text and confidence;
+- PDF sheet import that renders notation pages, detects six-line staff systems,
+  and returns editable ASCII tab plus OCR warnings;
 - a permissioned-fixture manifest, synthetic smoke-fixture generator, and an
   end-to-end worker pipeline test.
 

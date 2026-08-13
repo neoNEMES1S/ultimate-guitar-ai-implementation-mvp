@@ -13,9 +13,9 @@ proposed correction where one can be expressed. `approved`, `dismissed`, and
 `ignored` decisions are persisted in SQLite.
 
 Known first-slice limitations: no duration limit inspection yet, no FFmpeg
-normalisation, and no Demucs/source separation. Assisted screenshot OCR is
-available through the API and UI, but its text is editable and must be reviewed
-before analysis. Beat-grid timing, monotonic sequence alignment, evidence
-loops, Drive import plumbing, YouTube reference validation, and approved text
-export are included; Google Picker requires application credentials to be
-configured.
+normalisation, and no Demucs/source separation. Assisted screenshot and PDF OCR
+are available through the API and UI: PDF staff systems become editable ASCII
+tab, while bends, slides, rests, and tuplets remain manual-review items.
+Beat-grid timing, monotonic sequence alignment, evidence loops, Drive import
+plumbing, YouTube reference validation, and approved text export are included;
+Google Picker requires application credentials to be configured.

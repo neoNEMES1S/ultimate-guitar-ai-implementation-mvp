@@ -50,6 +50,24 @@ async def recognize_source_image(image: UploadFile = File(...)) -> dict:
         raise HTTPException(400, str(exc)) from exc
 
 
+@app.post("/api/sources/pdf")
+async def recognize_source_pdf(pdf: UploadFile = File(...)) -> dict:
+    suffix = Path(pdf.filename or "").suffix.lower()
+    if suffix != ".pdf":
+        raise HTTPException(400, "Sheet import must be a PDF file")
+    content = await pdf.read()
+    if len(content) > settings.max_pdf_bytes:
+        raise HTTPException(413, "PDF exceeds the 25 MB limit")
+    from .pdf_ocr import PdfOcrUnavailable, recognize_tab_pdf
+
+    try:
+        return recognize_tab_pdf(content, max_pages=settings.max_pdf_pages)
+    except PdfOcrUnavailable as exc:
+        raise HTTPException(503, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 @app.post("/api/jobs", response_model=JobResponse, status_code=202)
 async def create_analysis_job(
     audio: UploadFile = File(...),
